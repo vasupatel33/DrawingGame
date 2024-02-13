@@ -115,5 +115,4 @@ public class LineDrawer : MonoBehaviour
             Debug.LogWarning("Parent object of lines not found.");
         }
     }
-
 }
