@@ -8,6 +8,8 @@ public class LineDrawer : MonoBehaviour
     private Vector2 previousTouchPosition; // Previous touch position
     private Color selectedColor = Color.red; // Default color
 
+    [SerializeField] GameObject parentObject;
+
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -25,43 +27,19 @@ public class LineDrawer : MonoBehaviour
     void CreateNewLine(Vector2 touchPosition)
     {
         // Instantiate a new line object
-        currentLine = Instantiate(linePrefab, touchPosition, Quaternion.identity);
+        currentLine = Instantiate(linePrefab, touchPosition, Quaternion.identity, parentObject.transform);
         lineRenderer = currentLine.GetComponent<LineRenderer>();
-
-        // Copy LineRenderer component from prefab
-        LineRenderer prefabLineRenderer = linePrefab.GetComponent<LineRenderer>();
-        if (prefabLineRenderer != null)
-        {
-            lineRenderer.material = prefabLineRenderer.material; // Copy material
-            lineRenderer.widthCurve = prefabLineRenderer.widthCurve; // Copy width curve
-            lineRenderer.widthMultiplier = prefabLineRenderer.widthMultiplier; // Copy width multiplier
-        }
-        else
-        {
-            Debug.LogWarning("Line prefab is missing LineRenderer component.");
-        }
 
         // Set initial line position
         lineRenderer.positionCount = 1;
         lineRenderer.SetPosition(0, Camera.main.ScreenToWorldPoint(touchPosition));
 
         // Set line color
-        if (selectedColor != null)
-        {
-            lineRenderer.startColor = selectedColor;
-            lineRenderer.endColor = selectedColor;
-        }
-        else
-        {
-            lineRenderer.startColor = Color.black; // Default to black if selectedColor is not set
-            lineRenderer.endColor = Color.black; // Default to black if selectedColor is not set
-        }
+        UpdateLineColor(selectedColor);
 
         // Set the previous touch position
         previousTouchPosition = touchPosition;
     }
-
-
 
     void UpdateLine(Vector2 touchPosition)
     {
@@ -72,26 +50,29 @@ public class LineDrawer : MonoBehaviour
         lineRenderer.positionCount++;
         lineRenderer.SetPosition(lineRenderer.positionCount - 1, touchWorldPosition);
 
-        // Update line color (ensure it reflects any color changes)
-        lineRenderer.startColor = selectedColor;
-        lineRenderer.endColor = selectedColor;
-
         // Update previous touch position
         previousTouchPosition = touchPosition;
     }
 
 
+
+
     public void SetSelectedColor(Color color)
     {
         selectedColor = color;
-        Debug.Log("Color name = "+selectedColor);
-        Debug.Log("Color = " + color);
-
+        UpdateLineColor(selectedColor);
+    }
+    void UpdateLineColor(Color color)
+    {
+        // Ensure that LineRenderer component is assigned
         if (lineRenderer != null)
         {
-            lineRenderer.startColor = selectedColor;
-            lineRenderer.endColor = selectedColor;
-            Debug.Log("Line color = "+lineRenderer.startColor);
+            // Set the new color
+            lineRenderer.material.color = color;
+        }
+        else
+        {
+            Debug.LogWarning("LineRenderer component is not assigned.");
         }
     }
 
@@ -100,15 +81,38 @@ public class LineDrawer : MonoBehaviour
         // Ensure that LineRenderer component is assigned
         if (lineRenderer != null)
         {
-            // Get the material assigned to the LineRenderer
-            Material material = lineRenderer.material;
-
             // Set the new color
-            material.color = color;
+            selectedColor = color;
+            lineRenderer.startColor = selectedColor;
+            lineRenderer.endColor = selectedColor;
         }
         else
         {
             Debug.LogWarning("LineRenderer component is not assigned.");
+        }
+    }
+    
+    public void ClearScreen()
+    {
+
+        // Check if the parent object exists
+        if (parentObject != null)
+        {
+            // Get all child objects
+            Transform[] children = parentObject.GetComponentsInChildren<Transform>();
+
+            // Iterate through each child and destroy them
+            foreach (Transform child in children)
+            {
+                if (child != parentObject.transform) // Avoid destroying the parent itself
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Parent object of lines not found.");
         }
     }
 
